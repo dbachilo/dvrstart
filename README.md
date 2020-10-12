@@ -4,6 +4,7 @@ Dmitry Bachilo's DVR software for FreeBSD on Gambas
 This is a free DVR software for FreeBSD written in Gambas.
 This software uses ffmpeg to record video and audio (if available) from a survailance cameras.
 As of initial release it supports Axis and Hikvision cameras (because I have them)
+It records rtsp flow an devides it into 20-minute mp4 files sorted by subdirectories with camera names.
 
 Feel free to contribute.
 
@@ -31,11 +32,11 @@ for example:
 the last slash is mandatory
 
 In this case Parking_Lot camera will put it's records to /root/cams/Parking_Lot/
-You will also have to create this directory yourself. At list at the moment of this initial software release, I am planning to atomatize that.
+You will also have to create this directory yourself. At least at the moment of this initial software release, I am planning to automate that.
 
 recorded files will have a filename based on a time of record, i.e.
 /root/cams/Parking_Lot/record-[2020-09-27]-16-20.mp4
-The files are 20 minutes long, so you will have threee files per hour.
+The files are 20 minutes long, so you will have three files per hour. This could be ajusted in future releases
 
 <b>/usr/local/etc/dvr/storedays.conf</b> must contain the amount of days the records are kept on the server.
 for example:
