@@ -38,6 +38,23 @@ You will also have to create this directory yourself. At least at the moment of 
 recorded files will have a filename based on a time of record, i.e.
 /root/cams/Parking_Lot/record-[2020-09-27]-16-20.mp4
 The files are 20 minutes long, so you will have three files per hour. This could be ajusted in future releases
+While dvrstart is created to make 20-minute files, it tries to keep the files easily sorted, so that every record starts at eiter 00 or 20 or 40 minutes of the current hour. If dvrstart was lauched, say, at 13:22, it would wait until it's 13:40 and then stop the record and immidiately restart it, so that the next file will be called 13-40, then 14:00, then 13:20 and so on. It happens only at startup. If your server loses the connection with the camera, it will stop the record and would try to regain access. When it would reach the camera again, it would start the recording immidiatly, making all other records iterate every 20 minutes for now on whatever the time is. However every midnight it adjusts the filenames again. relaunching the recording, so the day always starts at 00:00 and then keeps on recording this way.
+
+In other words, say, you started the recording at 21:38 and lost a connection for a few seconds at 23:03. What you would have in your camera_name directory is:<br>
+record-[2020-09-27]-21-38.mp4 - this file would be 2 minutes long<br>
+record-[2020-09-27]-21-40.mp4 - this and further files would be 20 minutes long<br>
+record-[2020-09-27]-22-00.mp4<br>
+record-[2020-09-27]-22-20.mp4<br>
+record-[2020-09-27]-22-40.mp4<br>
+record-[2020-09-27]-23-00.mp4 - this file would be 3 minutes long<br>
+record-[2020-09-27]-23-03.mp4 - this and next file would be 20 minutes long<br>
+record-[2020-09-27]-23-23.mp4<br>
+record-[2020-09-27]-23-43.mp4 - this file would be 17 minutes long<br>
+record-[2020-09-28]-00:00.mp4 - this and further files would be 20 minutes long<br>
+record-[2020-09-28]-00:20.mp4<br>
+record-[2020-09-28]-00:40.mp4<br>
+record-[2020-09-28]-01:00.mp4<br>
+and so on.<br>
 
 <b>/usr/local/etc/dvr/storedays.conf</b> must contain the amount of days the records are kept on the server.
 for example:
