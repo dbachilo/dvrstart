@@ -4,17 +4,29 @@
 ' With Ivan Avdeev's brilliant ideas
 
 Public DVRstorage As String
-Public DaysToStore As String
+Public DaysToStore As Integer
 
 
 Public Sub Main()
 Dim currentMinutes As String
+
+If Application.Args[1] = "version" Then
+  Print Application.Version
+  Quit
+Endif
 
 If Application.Args[1] <> "-d" Then Application.Daemon = True
 
 DVRstorage = Trim(File.Load("/usr/local/etc/dvr/storage.conf"))
 DaysToStore = Val(Trim(File.Load("/usr/local/etc/dvr/storedays.conf")))
 DaysToStore *= -1
+
+RotateRecords
+
+If Application.Args[1] = "rotate" Or Application.Args[2] = "rotate" Then 
+  RotateRecords
+  Quit
+Endif
 
 StartAllCams
 
@@ -27,7 +39,6 @@ If currentMinutes = "00" Or currentMinutes = "20" Or currentMinutes = "40" Then 
 While currentMinutes <> "00" And currentMinutes <> "20" And currentMinutes <> "40"
   Wait 10
   currentMinutes = Format(Time(Now), "nn")
-  Print currentMinutes
 Wend
 
 AjustFilenames
@@ -44,8 +55,8 @@ Wait 60
 Goto RunningRoutine
 
 Catch
-    Shell "echo '" & Format(Now, "dd-mm-yyyy hh:nn:ss") & " error occured, deamon terminated' >> /var/log/dvr.log"
-    Quit
+  Shell "echo '" & Format(Now, "dd-mm-yyyy hh:nn:ss") & " error occured, deamon terminated' >> /var/log/dvr.log"
+  Quit
 End
 
 Public Sub StartAllCams()
