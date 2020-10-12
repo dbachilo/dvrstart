@@ -1,0 +1,101 @@
+' Gambas module file
+
+' DVR Software by Dmitry Bachilo
+' With Ivan Avdeev's brilliant ideas
+
+Public DVRstorage As String
+Public DaysToStore As String
+
+
+Public Sub Main()
+Dim currentMinutes As String
+
+If Application.Args[1] <> "-d" Then Application.Daemon = True
+
+DVRstorage = Trim(File.Load("/usr/local/etc/dvr/storage.conf"))
+DaysToStore = Val(Trim(File.Load("/usr/local/etc/dvr/storedays.conf")))
+DaysToStore *= -1
+
+StartAllCams
+
+Shell "echo '" & Format(Now, "dd-mm-yyyy hh:nn:ss") & " DVR service started' >> /var/log/dvr.log" Wait
+
+currentMinutes = Format(Time(Now), "nn")
+
+If currentMinutes = "00" Or currentMinutes = "20" Or currentMinutes = "40" Then Goto RunningRoutine
+
+While currentMinutes <> "00" And currentMinutes <> "20" And currentMinutes <> "40"
+  Wait 10
+  currentMinutes = Format(Time(Now), "nn")
+  Print currentMinutes
+Wend
+
+AjustFilenames
+
+RunningRoutine:
+
+If Format(Time(Now), "hh:nn") = "00:00" Then
+  AjustFilenames
+  RotateRecords
+Endif
+
+Wait 60
+
+Goto RunningRoutine
+
+Catch
+    Shell "echo '" & Format(Now, "dd-mm-yyyy hh:nn:ss") & " error occured, deamon terminated' >> /var/log/dvr.log"
+    Quit
+End
+
+Public Sub StartAllCams()
+Dim camconf As File
+Dim camline As String
+Dim camSettings As String[]
+Dim camUrl As String
+  
+camconf = Open "/usr/local/etc/dvr/cams.conf" For Input
+
+While Not Eof(camconf)
+  Line Input #camconf, camline
+  camSettings = Split(camline, ";")
+  If camSettings[3] = "Axis" Then camUrl = "/axis-media/media.amp"
+  If camSettings[3] = "Hikvision" Then CamUrl = ":554/ISAPI/Streaming/Channels/101"
+  camUrl = "rtsp://" & camSettings[1] & ":" & camSettings[2] & "@" & camSettings[0] & camUrl
+  StartRecord(CamUrl, camSettings[4])
+Wend
+
+Catch
+  Return
+
+End
+
+Public Sub StartRecord(CamURl As String, CamName As String)
+  
+Shell ("while [ true ] ; do  sleep 1 ; ffmpeg -i " & CamURL & " -vsync 0 -f segment -strftime 1 -reset_timestamps 1 -segment_time 1200 -vcodec copy " & DVRstorage & CamName & "/record-[%F]-%H-%M.mp4 ; done")
+  
+End
+
+
+
+Public Sub AjustFilenames()
+  
+Shell "killall ffmpeg"
+Shell "echo '" & Format(Now, "dd-mm-yyyy hh:nn:ss") & " filenames adjusted' >> /var/log/dvr.log"
+  
+End
+
+Public Sub RotateRecords()
+Dim dirlist As String[]
+Dim CamDir As String
+Dim DateInQuestion As String
+
+DateInQuestion = "*" & Format(DateAdd(Now, gb.day, DaysToStore), "yyyy-mm-dd") & "*"
+
+dirlist = Dir(DVRstorage, "", gb.Directory)
+
+For Each CamDir In dirlist
+  Shell "rm " & DVRstorage & CamDir & "/" & DateInQuestion
+Next
+  
+End
