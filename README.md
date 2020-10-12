@@ -1,5 +1,6 @@
 # dvrstart
 Dmitry Bachilo's DVR software for FreeBSD on Gambas
+Based on Ivan Avdeev's shell scripts logic
 
 This is a free DVR software for FreeBSD written in Gambas.
 This software uses ffmpeg to record video and audio (if available) from a survailance cameras.
