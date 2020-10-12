@@ -47,3 +47,5 @@ this means that on september 26 the records made on september 1st will be delete
 
 It does not matter, where your dvrstart.gambas file is located, you can run it from anywhere, but it is assumed that you run it from /usr/local/bin
 during the system startup and it has root priviledges.
+
+It does not have to be run as root as of now, because it does not write it's config files yet. If you have a user, which has write privs to the path of records, then it would work just as good.
