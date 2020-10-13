@@ -82,6 +82,8 @@ Catch
 End
 
 Public Sub StartRecord(CamURl As String, CamName As String)
+
+If Not Exist(DVRstorage & CamName) Then Mkdir DVRstorage & CamName
   
 Shell ("while [ true ] ; do  sleep 1 ; ffmpeg -i " & CamURL & " -vsync 0 -f segment -strftime 1 -reset_timestamps 1 -segment_time 1200 -vcodec copy " & DVRstorage & CamName & "/record-[%F]-%H-%M.mp4 ; done")
   
