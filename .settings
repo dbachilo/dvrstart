@@ -9,7 +9,7 @@ Path="dvrstart.gambas"
 
 [OpenFile]
 Active=1
-File[1]=".src/Main.module:28.10"
+File[1]=".src/Main.module:2.85"
 Count=1
 
 [Watches]

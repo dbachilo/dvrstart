@@ -70,8 +70,20 @@ camconf = Open "/usr/local/etc/dvr/cams.conf" For Input
 While Not Eof(camconf)
   Line Input #camconf, camline
   camSettings = Split(camline, ";")
-  If camSettings[3] = "Axis" Then camUrl = "/axis-media/media.amp"
-  If camSettings[3] = "Hikvision" Then CamUrl = ":554/ISAPI/Streaming/Channels/101"
+  
+  Select Case camSettings[3]
+    Case "Axis"
+      camUrl = "/axis-media/media.amp"
+    Case "Hikvision"
+      CamUrl = ":554/ISAPI/Streaming/Channels/101"
+    Case "Cisco"
+      CamUrl = ""
+    Case "Cisco2421"
+      CamUrl = "/img/media.sav"
+    Case "Dlink"
+      CamUrl = "/live1.sdp"
+  End Select
+  
   camUrl = "rtsp://" & camSettings[1] & ":" & camSettings[2] & "@" & camSettings[0] & camUrl
   StartRecord(CamUrl, camSettings[4])
 Wend

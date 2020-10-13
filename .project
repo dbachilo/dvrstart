@@ -1,7 +1,7 @@
 # Gambas Project File 3.0
 Title=DVR Starup
 Startup=Main
-Version=0.0.14
+Version=0.0.17
 TabSize=2
 Language=en_US
 Packager=1
