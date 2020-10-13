@@ -33,7 +33,6 @@ for example:
 the last slash is mandatory
 
 In this case Parking_Lot camera will put it's records to /root/cams/Parking_Lot/
-You will also have to create this directory yourself. At least at the moment of this initial software release, I am planning to automate that.
 
 recorded files will have a filename based on a time of record, i.e.<br>
 /root/cams/Parking_Lot/record-[2020-09-27]-16-20.mp4<br>
