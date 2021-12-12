@@ -5,28 +5,54 @@
 
 Public DVRstorage As String
 Public DaysToStore As Integer
-
+Public Cameras As String[]
 
 Public Sub Main()
 Dim currentMinutes As String
+Dim startupOption As String
+Dim daemonize As Boolean
+Dim LastRecording As String
+Dim FileName As String
+Dim camline As String
 
-If Application.Args[1] = "version" Then
-  Print Application.Version
-  Quit
-Endif
+daemonize = True
 
-If Application.Args[1] <> "-d" Then Application.Daemon = True
+For Each startupOption In Application.Args
+  If startupOption = "help" Then
+    Print "-----------------------------------------------"
+    Print "Camera recorder for FreeBSD by Dmitry Bachilo"
+    Print "===Options:==="
+    Print "version - print version and quit"
+    Print "rotate - rotate recordings and quit"
+    Print "-d - run in foreground"
+    Print "stop - kill currently running ffmpeg and dvrstart"
+    Print "-----------------------------------------------"
+    Quit
+  Endif
+  
+  If startupOption = "version" Then
+    Print Application.Version
+    Quit
+  Endif
+  
+  If startupOption = "rotate" Then 
+    RotateRecords
+    Quit
+  Endif
+  
+  If startupOption = "-d" Then daemonize = False
+  
+  If startupOption = "stop" Then StopRecord
+  
+Next
+
+If daemonize = True Then Application.Daemon = True
 
 DVRstorage = Trim(File.Load("/usr/local/etc/dvr/storage.conf"))
-DaysToStore = Val(Trim(File.Load("/usr/local/etc/dvr/storedays.conf")))
-DaysToStore *= -1
+DaysToStore = Val(Trim(File.Load("/usr/local/etc/dvr/storedays.conf"))) * -1
+Cameras = Split(File.Load("/usr/local/etc/dvr/cams.conf"), "\n")
 
 RotateRecords
-
-If Application.Args[1] = "rotate" Or Application.Args[2] = "rotate" Then 
-  RotateRecords
-  Quit
-Endif
 
 StartAllCams
 
@@ -45,48 +71,81 @@ AjustFilenames
 
 RunningRoutine:
 
+Do
+
+If Exist("/tmp/stopdvr") Then StopRecord
+
 If Format(Time(Now), "hh:nn") = "00:00" Then
   AjustFilenames
   RotateRecords
 Endif
 
+
+If Format(Time(Now), "nn") = "30" Then
+  
+  For Each camline In Cameras
+    For Each FileName In Dir(DVRstorage & Split(camline, ";")[4], "*.mp4").Sort()
+      LastRecording = FileName
+    Next
+      If InStr(LastRecording, Format(Now, "yyyy-mm-dd") & "]-" & Format(Time(Now), "hh")) = 0 Then
+        Shell "echo '" & Format(Now, "dd-mm-yyyy hh:nn:ss") & " Camera " & Split(camline, ";")[4] & " has no records in this hour' >> /var/log/dvr.log"
+      Endif
+  Next
+
+End If
+
 Wait 60
 
-Goto RunningRoutine
+Loop
 
 Catch
-  Shell "echo '" & Format(Now, "dd-mm-yyyy hh:nn:ss") & " error occured, deamon terminated' >> /var/log/dvr.log"
+  Shell "echo '" & Format(Now, "dd-mm-yyyy hh:nn:ss") & " error occured: " & Error.Text & ", deamon terminated' >> /var/log/dvr.log"
   Quit
 End
 
 Public Sub StartAllCams()
-Dim camconf As File
 Dim camline As String
 Dim camSettings As String[]
 Dim camUrl As String
-  
-camconf = Open "/usr/local/etc/dvr/cams.conf" For Input
+Dim Proto As String
 
-While Not Eof(camconf)
-  Line Input #camconf, camline
+
+For Each camline In Cameras
   camSettings = Split(camline, ";")
-  
+
   Select Case camSettings[3]
     Case "Axis"
       camUrl = "/axis-media/media.amp"
+      Proto = "-i rtsp://"
     Case "Hikvision"
-      CamUrl = ":554/ISAPI/Streaming/Channels/101"
+      CamUrl = "/ISAPI/Streaming/Channels/101"
+      Proto = "-i rtsp://"
+    Case "Trassir"
+      CamUrl = "/live/main"
+      Proto = "-i rtsp://"
     Case "Cisco"
       CamUrl = ""
+      Proto = "-i rtsp://"
     Case "Cisco2421"
       CamUrl = "/img/media.sav"
+      Proto = "-i rtsp://"
     Case "Dlink"
       CamUrl = "/live1.sdp"
+      Proto = "-i rtsp://"
+    Case "DlinkDCS"
+      CamUrl = "/play1.sdp"
+      Proto = "-i rtsp://"
+    Case "Dlink920L"
+      CamUrl = "/MJPEG.CGI"
+      Proto = "-f mjpeg -i http://"
+    Case "Novicam"
+      CamUrl = "/Streaming/Channels/101"
+      Proto = "-i rtsp://"
   End Select
   
-  camUrl = "rtsp://" & camSettings[1] & ":" & camSettings[2] & "@" & camSettings[0] & camUrl
+  camUrl = Proto & camSettings[1] & ":" & camSettings[2] & "@" & camSettings[0] & camUrl
   StartRecord(CamUrl, camSettings[4])
-Wend
+Next
 
 Catch
   Return
@@ -97,7 +156,7 @@ Public Sub StartRecord(CamURl As String, CamName As String)
 
 If Not Exist(DVRstorage & CamName) Then Mkdir DVRstorage & CamName
   
-Shell ("while [ true ] ; do  sleep 1 ; /usr/local/bin/ffmpeg -i " & CamURL & " -vsync 0 -f segment -strftime 1 -reset_timestamps 1 -segment_time 1200 -vcodec copy " & DVRstorage & CamName & "/record-[%F]-%H-%M.mp4 ; done")
+Shell ("while [ true ] ; do  sleep 1 ; ffmpeg " & CamURL & " -vsync 0 -f segment -strftime 1 -reset_timestamps 1 -segment_time 1200 -vcodec copy " & DVRstorage & CamName & "/record-[%F]-%H-%M.mp4 ; done")
   
 End
 
@@ -124,3 +183,16 @@ For Each CamDir In dirlist
 Next
   
 End
+
+Public Sub StopRecord()
+
+Try Kill "/tmp/stopdvr"
+Shell "killall sh" Wait
+Shell "killall ffmpeg" Wait
+Shell "echo '" & Format(Now, "dd-mm-yyyy hh:nn:ss") & " DVR stopped' >> /var/log/dvr.log"
+Shell "killall gbr3" Wait
+Shell "killall gbx3" Wait
+Quit
+  
+End
+
