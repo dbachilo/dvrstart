@@ -4,7 +4,7 @@ Based on Ivan Avdeev's shell scripts logic
 
 This is a free DVR software for FreeBSD written in Gambas.<br>
 This software uses ffmpeg to record video and audio (if available) from a survailance cameras.<br>
-As of initial release it supports Axis and Hikvision cameras (because I have them)<br>
+The list of supported cameras is limited to what I personally have and can test, but the key feature is that new type of camera is easily added to the supported list, while in all my commercial hardware DVRs this list can't be changed if the device is not supported by vendor anymore, so that's why I wrote this piece of software in the first place.<br>
 It records rtsp flow and devides it into 20-minute mp4 files sorted by subdirectories with camera names.<br>
 
 Feel free to contribute.
